@@ -7,7 +7,10 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.mem = [0] * 256
+        self.reg = [0] * 8
+        self.pc = 0
+        self.fl = 0
 
     def load(self):
         """Load a program into memory."""
@@ -39,6 +42,17 @@ class CPU:
         #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
+
+    #Access RAM
+    def ram_read(self, mar):
+        # mar = Memory Address Register (MAR) and the Memory Data Register (MDR).
+        # The MAR contains the address that is being read or written to.
+        pass
+
+    def ram_write(self, mar, mdr):
+        # mdr = Memory Data Register (MDR)
+        # The MDR contains the data that was read or the data to write.
+        pass
 
     def trace(self):
         """
