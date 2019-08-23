@@ -115,6 +115,12 @@ class CPU:
         POP = 0b01000110 # Pop the value at the top of the stack into the given register.
         CALL = 0b01010000 # Calls a subroutine (function) at the address stored in the register.
         RET = 0b00010001 # Pop the value from the top of the stack and store it in the PC.
+        
+        #Todo Add These For The Sprint:
+        CMP = 0b10100111
+        JMP = 0b01010100
+        JEQ = 0b01010101
+        JNE = 0b01010110
         running = True
 
         while running:
