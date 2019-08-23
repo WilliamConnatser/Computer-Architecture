@@ -11,6 +11,7 @@ class CPU:
         self.reg = [0] * 8
         self.pc = 0
         self.fl = 0
+        self.heap = 0
 
     def load(self):
         """Load a program into memory."""
@@ -33,6 +34,7 @@ class CPU:
                     line = line[:line.index("#")]
                 self.ram_write(address,line)
                 address += 1
+                self.heap += 1
             line = source_code.readline()
 
     def alu(self, op, reg_a, reg_b):
@@ -60,6 +62,28 @@ class CPU:
         # The MDR contains the data that was read or the data to write.
         self.ram[mar] = mdr
 
+    def push(self,value):
+        self.reg[7] -= 1
+        ram_loc = 0xF4 - self.reg[7]
+        # If application instructions are stored in this ram location
+        # Then a stack overflow has ocurred
+        if self.ram[ram_loc] != 0:
+            print("Stack Overflow..")
+            sys.exit(1)
+        else:
+            self.ram[ram_loc] = value
+
+    def pop(self):
+        # If R7 is 0 then the stack is empty
+        if self.reg[7] < 0:
+            ram_loc = 0xF4 - self.reg[7]
+            return_value = self.ram[ram_loc]
+            self.ram[ram_loc] = 0
+            self.reg[7] += 1
+        else:
+            return_value = None        
+        return return_value
+
     def trace(self):
         """
         Handy function to print out the CPU state. You might want to call this
@@ -82,12 +106,15 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
+        ADD = 0b10100000 # Add the value in two registers and store the result in registerA.
         HLT  = 0b00000001 # Halt the CPU (and exit the emulator).
         LDI  = 0b10000010 # Set the value of a register to an integer.
         PRN  = 0b01000111 # Print numeric value stored in the given register.
         MUL  = 0b10100010 # Multiply the values in two registers together and store the result in registerA.
         PUSH = 0b01000101 # Push the value in the given register on the stack.
         POP = 0b01000110 # Pop the value at the top of the stack into the given register.
+        CALL = 0b01010000 # Calls a subroutine (function) at the address stored in the register.
+        RET = 0b00010001 # Pop the value from the top of the stack and store it in the PC.
         running = True
 
         while running:
@@ -99,7 +126,10 @@ class CPU:
 
             if ir == PRN:
                 print(self.reg[operand_a])
-                self.pc += 2         
+                self.pc += 2
+            elif ir == ADD:
+                self.reg[operand_a] += self.reg[operand_b]
+                self.pc += 3       
             elif ir == MUL:
                 self.reg[operand_a] *= self.reg[operand_b]
                 self.pc += 3
@@ -107,27 +137,16 @@ class CPU:
                 self.reg[operand_a] = operand_b
                 self.pc += 3
             elif ir == PUSH:
-                self.reg[7] -= 1
-                ram_loc = 0xF4 - self.reg[7]
-                # If application instructions are stored in this ram location
-                # Then a stack overflow has ocurred
-                if self.ram[ram_loc] != 0:
-                    print("Stack Overflow..")
-                    sys.exit(1)
-                else:
-                    self.ram[ram_loc] = self.reg[operand_a]
-                    self.pc += 2
-            elif ir == POP:
-                # If R7 is 0 then the stack is empty
-                if self.reg[7] < 0:
-                    ram_loc = 0xF4 - self.reg[7]
-                    return_value = self.ram[ram_loc]
-                    self.ram[ram_loc] = 0
-                    self.reg[7] += 1
-                else:
-                    return_value = None
+                self.push(self.reg[operand_a])
                 self.pc += 2
-                self.reg[operand_a] = return_value
+            elif ir == POP:
+                self.reg[operand_a] = self.pop()
+                self.pc += 2
+            elif ir == CALL:
+                self.push(self.pc+2)
+                self.pc = self.reg[operand_a]
+            elif ir == RET:
+                self.pc = self.pop()
             elif ir == HLT:
                 running = False
                 sys.exit(1)
