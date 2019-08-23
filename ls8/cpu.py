@@ -86,6 +86,8 @@ class CPU:
         LDI  = 0b10000010 # Set the value of a register to an integer.
         PRN  = 0b01000111 # Print numeric value stored in the given register.
         MUL  = 0b10100010 # Multiply the values in two registers together and store the result in registerA.
+        PUSH = 0b01000101 # Push the value in the given register on the stack.
+        POP = 0b01000110 # Pop the value at the top of the stack into the given register.
         running = True
 
         while running:
@@ -97,13 +99,35 @@ class CPU:
 
             if ir == PRN:
                 print(self.reg[operand_a])
-                self.pc += 2            
+                self.pc += 2         
             elif ir == MUL:
                 self.reg[operand_a] *= self.reg[operand_b]
                 self.pc += 3
             elif ir == LDI:
                 self.reg[operand_a] = operand_b
                 self.pc += 3
+            elif ir == PUSH:
+                self.reg[7] -= 1
+                ram_loc = 0xF4 - self.reg[7]
+                # If application instructions are stored in this ram location
+                # Then a stack overflow has ocurred
+                if self.ram[ram_loc] != 0:
+                    print("Stack Overflow..")
+                    sys.exit(1)
+                else:
+                    self.ram[ram_loc] = self.reg[operand_a]
+                    self.pc += 2
+            elif ir == POP:
+                # If R7 is 0 then the stack is empty
+                if self.reg[7] < 0:
+                    ram_loc = 0xF4 - self.reg[7]
+                    return_value = self.ram[ram_loc]
+                    self.ram[ram_loc] = 0
+                    self.reg[7] += 1
+                else:
+                    return_value = None
+                self.pc += 2
+                self.reg[operand_a] = return_value
             elif ir == HLT:
                 running = False
                 sys.exit(1)
