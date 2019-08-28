@@ -4,7 +4,7 @@
 
 import sys
 from cpu import *
-
+print("starting..")
 cpu = CPU()
 
 cpu.load()

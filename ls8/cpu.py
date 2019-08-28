@@ -132,14 +132,15 @@ class CPU:
             0b10100010: "MUL", # Multiply the values in two registers together and store the result in registerA.
             0b01000101: "PUSH", # Push the value in the given register on the stack.
             0b01000110: "POP",# Pop the value at the top of the stack into the given register.
-            0b01010000: "CALL", # Calls a subroutine (function) at the address stored in the register.
+            0b01010000: "CALL",# Calls a subroutine (function) at the address stored in the register.
             0b00010001: "RET",# Pop the value from the top of the stack and store it in the PC.
             0b10100111: "CMP",# Compare the values in two registers.
             0b01010100: "JMP",# Jump to the address stored in the given register.
             0b01010101: "JEQ",# If equal flag is set (true), jump to the address stored in the given register.
             0b01010110: "JNE",# If E flag
+            0b10101010: "OR"# Perform a bitwise-OR between the values in registerA and registerB, storing the result in registerA.
         }
-
+        print(self.ram_read(self.pc))
         print(f"TRACE: PC#: %02X | FL: %02X | PC: %02X | PC+1: %02X | PC+2: %02X | INSTRUCTION: %s" % (
             self.pc,
             self.fl,
@@ -149,7 +150,7 @@ class CPU:
             self.ram_read(self.pc + 2),
             instruction_set[self.ram_read(self.pc)]
         ), end='')
-
+        # 3210 1100
         for i in range(8):
             print(" %02X" % self.reg[i], end='')
 
@@ -170,6 +171,7 @@ class CPU:
         JMP = 0b01010100 # Jump to the address stored in the given register.
         JEQ = 0b01010101 # If equal flag is set (true), jump to the address stored in the given register.
         JNE = 0b01010110 # If E flag is clear (false, 0), jump to the address stored in the given register.
+        OR = 0b10101010 # Perform a bitwise-OR between the values in registerA and registerB, storing the result in registerA.
         running = True
 
         while running:
@@ -179,19 +181,22 @@ class CPU:
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
 
-            #self.trace()
+            # print(ir)
+            # self.trace()
 
             if ir == PRN:
-                print(self.reg[operand_a])
+                # print(self.reg[operand_a])
                 self.pc += 2
             elif ir == ADD:
                 self.reg[operand_a] += self.reg[operand_b]
+                # print("add result: ", str(self.reg[operand_a]))
                 self.pc += 3       
             elif ir == MUL:
                 self.reg[operand_a] *= self.reg[operand_b]
                 self.pc += 3
             elif ir == LDI:
                 self.reg[operand_a] = operand_b
+                # print(f"{self.reg[operand_a]} = {operand_b}")
                 self.pc += 3
             elif ir == PUSH:
                 self.push(self.reg[operand_a])
@@ -206,6 +211,10 @@ class CPU:
                 self.pc = self.pop()
             elif ir == CMP:
                 self.set_flags(operand_a, operand_b)
+                self.pc += 3
+            elif ir == OR:
+                self.reg[operand_a] = operand_a | operand_b
+                print(self.reg[operand_a])
                 self.pc += 3
             elif ir == JMP:
                 self.pc = self.reg[operand_a]
